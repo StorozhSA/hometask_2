@@ -21,7 +21,6 @@ class User private constructor(
             .map { it.first().toUpperCase() }
             .joinToString(" ")
 
-
     private var phone: String? = null
         set(value) {
             field = normalizePhone(value)
