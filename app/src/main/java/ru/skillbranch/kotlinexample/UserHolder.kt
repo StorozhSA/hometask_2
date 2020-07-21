@@ -21,6 +21,14 @@ object UserHolder {
             map[it.login] = it
         }
 
+    fun registerUserByCSV(fullName: String, email: String, phone: String, saltHash: String): User =
+        User.makeUser(fullName, email = email, phone = phone, saltHash = saltHash).also {
+            if (map.containsKey(it.login) || map.containsValue(it)) {
+                throw IllegalArgumentException("A user with this phone already exists")
+            }
+            map[it.login] = it
+        }
+
     fun loginUser(login: String, password: String): String? =
         map[User.normalizePhone(login.trim())
             ?: login.trim()]?.let { if (it.checkPassword(password)) it.userInfo else null }
@@ -36,6 +44,16 @@ object UserHolder {
     @VisibleForTesting(otherwise = VisibleForTesting.NONE)
     fun clearHolder() {
         map.clear()
+    }
+
+    fun importUsers(list: List<String>): List<User> {
+        val res: MutableList<User> = mutableListOf()
+        list.forEach {
+            val sv: List<String> = it.split(";").map { it1 -> it1.trim() }
+            val user = registerUserByCSV(sv[0], sv[1], sv[3], sv[2])
+            res.add(user)
+        }
+        return res
     }
 
 

@@ -3,6 +3,10 @@ package ru.skillbranch.kotlinexample
 import org.junit.After
 import org.junit.Assert
 import org.junit.Test
+import ru.skillbranch.kotlinexample.extensions.dropLastUntil
+import java.math.BigInteger
+import java.security.MessageDigest
+import java.security.SecureRandom
 
 /**
  * Example local unit test, which will execute on the development machine (host).
@@ -188,5 +192,73 @@ class ExampleUnitTest {
 
         Assert.assertNotEquals(oldAccess, user.accessCode!!)
         Assert.assertEquals(expectedInfo, successResult)
+    }
+
+    @Test
+    fun import_user() {
+        val csvList: List<String> = listOf(
+            " John Doe ;JohnDoe@unknow.com;" + encryptForTests("testPass") + ";;",
+            " Mumb Ndi ;mumbndi@unknow.com;" + encryptForTests("pass1") + ";;"
+        )
+
+        val usrList = UserHolder.importUsers(csvList)
+//        usrList.forEach {
+//            println("============")
+//            println(it.userInfo)
+//        }
+        Assert.assertEquals(2, usrList.size)
+    }
+
+    @Test
+    fun drop_last_until1() {
+        var successResult = listOf(1, 2, 3).dropLastUntil { it == 2 }
+        Assert.assertEquals(listOf(1), successResult)
+    }
+
+    @Test
+    fun drop_last_until2() {
+        var successResult =
+            "House Nymeros Martell of Sunspear".split(" ").dropLastUntil { it == "of" }
+        Assert.assertEquals("House Nymeros Martell".split(" "), successResult)
+    }
+
+    @Test
+    fun login_import_user_success() {
+        val holder = UserHolder
+
+        val csvList: List<String> = listOf(
+            " John Doe ;John_Doe@unknown.com;" + encryptForTests("testPass") + ";;",
+            " Mumb Ndi ;mumbndi@unknow.com;" + encryptForTests("pass1") + ";;"
+        )
+
+        val usrList = holder.importUsers(csvList)
+
+        val expectedInfo = """
+            firstName: John
+            lastName: Doe
+            login: john_doe@unknown.com
+            fullName: John Doe
+            initials: J D
+            email: John_Doe@unknown.com
+            phone: null
+            meta: {auth=csv}
+        """.trimIndent()
+
+        val successResult = holder.loginUser("john_doe@unknown.com", "testPass")
+
+        Assert.assertEquals(expectedInfo, successResult)
+    }
+
+
+    private fun encryptForTests(password: String): String {
+        var salt = ByteArray(16).also { SecureRandom().nextBytes(it) }.toString()
+        val hash = salt.plus(password).md5()
+        println("Generated for tests salt and hash $salt:$hash")
+        return "$salt:$hash"
+    }
+
+    private fun String.md5(): String {
+        val digest = MessageDigest.getInstance("MD5").digest(toByteArray())
+        return BigInteger(1, digest).toString(16).padStart(32, '0')
     }
 }

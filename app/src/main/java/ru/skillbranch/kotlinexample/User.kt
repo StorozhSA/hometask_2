@@ -66,6 +66,28 @@ class User private constructor(
         sendAccessCodeToUser(rawPhone, code)
     }
 
+    //For CSV
+    constructor(
+        firstName: String,
+        lastName: String? = null,
+        email: String? = null,
+        rawPhone: String? = null,
+        saltHash: String? = null
+    ) : this(
+        firstName,
+        lastName,
+        email = email,
+        rawPhone = rawPhone,
+        meta = mapOf("auth" to "csv")
+    ) {
+        println("Third csv constructor")
+        salt = saltHash?.split(":")?.get(0)
+        passwordHash = saltHash?.split(":")?.get(1) ?: "empty"
+        println("CSV passwordHash is $passwordHash")
+
+    }
+
+
     val userInfo: String
 
     init {
@@ -91,6 +113,7 @@ class User private constructor(
 
     fun checkPassword(pass: String) = encrypt(pass) == passwordHash.also {
         println("Checking passwordHash is $passwordHash")
+        println("Checking salt is $salt")
     }
 
 
@@ -139,10 +162,12 @@ class User private constructor(
             fullName: String,
             phone: String? = null,
             email: String? = null,
-            password: String? = null
+            password: String? = null,
+            saltHash: String? = null
         ): User {
             val (firstName, lastName) = fullName.fullNameToPair()
             return when {
+                !saltHash.isNullOrBlank() -> User(firstName, lastName, email, phone, saltHash)
                 !phone.isNullOrBlank() -> User(firstName, lastName, phone)
                 !email.isNullOrBlank() && !password.isNullOrBlank() -> User(
                     firstName,
